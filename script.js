@@ -99,10 +99,89 @@ $("#giftButton")?.addEventListener("click", openGift);
 $("#giftArt")?.addEventListener("click", openGift);
 $("#giftAgain")?.addEventListener("click", () => { confettiBurst(32); $("#giftWish p").textContent = "One more wish, because one is obviously not enough: may the year ahead bring soft days, chaotic laughs, great music, beautiful little surprises, and people who make you feel at home. Happy birthday, Minnie. ♡"; });
 
-const birthday = new Date(2026, 9, 20, 0, 0, 0);
-const now = new Date();
-const sameDay = now.getFullYear()===birthday.getFullYear() && now.getMonth()===birthday.getMonth() && now.getDate()===birthday.getDate();
-document.title = sameDay ? "Happy Birthday, Minnie! ✿" : "Minnieverse — a little universe for you";
+// Make external music links open safely; the in-page player streams only after an explicit click.
+$('a[target="_blank"]').forEach(a => a.setAttribute("rel","noopener noreferrer"));
 
-// Make external music links open safely in a new tab; this page never auto-plays audio.
-$$('a[target="_blank"]').forEach(a => a.setAttribute("rel","noopener noreferrer"));
+// Birthday countdown: adapt to the visitor's local calendar and remain useful after the day.
+const birthdayDate = new Date(2026, 9, 20);
+const dateOnly = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+const daysUntilBirthday = Math.round((dateOnly(birthdayDate) - dateOnly(new Date())) / 86400000);
+const birthdayStatus = $("#birthdayStatus");
+if (birthdayStatus) {
+  if (daysUntilBirthday > 1) birthdayStatus.innerHTML = `<span>✳</span> ${daysUntilBirthday} DAYS UNTIL THE MINNIE HOLIDAY`;
+  else if (daysUntilBirthday === 1) birthdayStatus.innerHTML = `<span>✳</span> TOMORROW IS MINNIE DAY`;
+  else if (daysUntilBirthday === 0) birthdayStatus.innerHTML = `<span>✳</span> IT'S MINNIE DAY — LET'S CELEBRATE`;
+  else birthdayStatus.innerHTML = `<span>✳</span> A BIRTHDAY KEEPSAKE TO REVISIT`;
+}
+if (dateOnly(new Date()).getTime() === dateOnly(birthdayDate).getTime()) {
+  document.title = "Happy Birthday, Minnie! ✿";
+}
+
+// A slim page-progress line makes the long scrapbook feel guided, especially on mobile.
+const progressBar = $("#scrollProgress");
+let progressTicking = false;
+const updateProgress = () => {
+  if (!progressBar || progressTicking) return;
+  progressTicking = true;
+  requestAnimationFrame(() => {
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = scrollable > 0 ? Math.min(100, Math.max(0, window.scrollY / scrollable * 100)) : 0;
+    progressBar.style.width = progress + "%";
+    progressTicking = false;
+  });
+};
+window.addEventListener("scroll", updateProgress, {passive:true});
+window.addEventListener("resize", updateProgress);
+updateProgress();
+
+// An extra birthday-only confetti moment, always user-triggered and reduced-motion aware.
+$("#partyButton")?.addEventListener("click", () => {
+  confettiBurst(72);
+  const button = $("#partyButton");
+  button.textContent = "MINNIE DAY ENERGY ✳";
+  if (!reduceMotion && button.animate) button.animate(
+    [{transform:"rotate(0) scale(1)"},{transform:"rotate(-2deg) scale(1.05)"},{transform:"rotate(2deg) scale(1)"},{transform:"none"}],
+    {duration:420,easing:"ease-out"}
+  );
+});
+
+// Stream through YouTube's official embed player in-page; never download or bundle copyrighted audio.
+// No iframe loads until Minnie (or the visitor) taps a track.
+const musicPlayer = $("#musicPlayer");
+const playerFrame = $("#playerFrame");
+$(".track[data-video-id]").forEach(track => {
+  track.setAttribute("aria-label", "Play " + track.dataset.trackTitle + " in the page");
+  track.addEventListener("click", event => {
+    event.preventDefault();
+    const id = track.dataset.videoId;
+    const title = track.dataset.trackTitle || "Minnie soundtrack";
+    if (!playerFrame || !/^[A-Za-z0-9_-]{11}$/.test(id || "")) return;
+    $(".track").forEach(row => {
+      row.classList.toggle("is-playing", row === track);
+      if (row === track) row.setAttribute("aria-current", "true");
+      else row.removeAttribute("aria-current");
+    });
+    if (musicPlayer) musicPlayer.classList.add("has-track");
+    playerFrame.innerHTML = "";
+    const frame = document.createElement("iframe");
+    frame.src = "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(id) + "?autoplay=1&rel=0&modestbranding=1";
+    frame.title = "Now playing: " + title;
+    frame.loading = "eager";
+    frame.allow = "autoplay; encrypted-media; picture-in-picture; web-share";
+    frame.referrerPolicy = "strict-origin-when-cross-origin";
+    frame.allowFullscreen = true;
+    playerFrame.appendChild(frame);
+    const placeholder = $(".player-placeholder", musicPlayer);
+    if (placeholder) {
+      placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>NOW PLAYING IN MINNIEVERSE</small><p></p></div><button class="player-stop" type="button" aria-label="Stop music">×</button>';
+      $("p", placeholder).textContent = title;
+      $(".player-stop", placeholder)?.addEventListener("click", () => {
+        playerFrame.innerHTML = "";
+        musicPlayer.classList.remove("has-track");
+        $(".track").forEach(row => { row.classList.remove("is-playing"); row.removeAttribute("aria-current"); });
+        placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>MINNIE\'S VERY PERSONAL RADIO</small><p>Pick a track above and let it play right here.</p></div><span class="player-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
+      });
+    }
+    if (!reduceMotion) musicPlayer?.scrollIntoView({behavior:"smooth",block:"nearest"});
+  });
+});
