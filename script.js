@@ -192,7 +192,7 @@ tracks.forEach(track => {
 
     const placeholder = $(".player-placeholder", musicPlayer);
     if (placeholder) {
-      placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>MINNIE\\'S VERY PERSONAL RADIO</small><p></p></div><button class="player-stop" type="button" aria-label="Stop music">×</button>';
+      placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>MINNIE&#39;S VERY PERSONAL RADIO</small><p></p></div><button class="player-stop" type="button" aria-label="Stop music">×</button>';
       $("p", placeholder).textContent = title;
       $(".player-stop", placeholder)?.addEventListener("click", resetAudio);
     }
