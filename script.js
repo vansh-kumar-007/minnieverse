@@ -100,7 +100,7 @@ $("#giftArt")?.addEventListener("click", openGift);
 $("#giftAgain")?.addEventListener("click", () => { confettiBurst(32); $("#giftWish p").textContent = "One more wish, because one is obviously not enough: may the year ahead bring soft days, chaotic laughs, great music, beautiful little surprises, and people who make you feel at home. Happy birthday, Minnie. ♡"; });
 
 // Make external music links open safely; the in-page player streams only after an explicit click.
-$('a[target="_blank"]').forEach(a => a.setAttribute("rel","noopener noreferrer"));
+$$('a[target="_blank"]').forEach(a => a.setAttribute("rel","noopener noreferrer"));
 
 // Birthday countdown: adapt to the visitor's local calendar and remain useful after the day.
 const birthdayDate = new Date(2026, 9, 20);
@@ -235,4 +235,4 @@ audio?.addEventListener("error", () => {
 });
 
 // External links elsewhere on the page remain safe; the soundtrack has no external links.
-$('a[target="_blank"]').forEach(a => a.setAttribute("rel","noopener noreferrer"));
+$$('a[target="_blank"]').forEach(a => a.setAttribute("rel","noopener noreferrer"));
