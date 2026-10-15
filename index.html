@@ -30,9 +30,31 @@
 <button type="button" class="track" data-audio-src="./assets/audio/maneskin-i-wanna-be-your-slave.mp3" data-track-title="I Wanna Be Your Slave — Måneskin" aria-pressed="false"><span class="track-no">04</span><span class="track-art art-dark">✳</span><span class="track-text"><b>Enter at your own risk</b><small>Måneskin — I Wanna Be Your Slave</small></span><small class="track-tag">CHAOTIC</small><span class="arrow">▶</span></button>
 </div>
 <div class="music-player" id="musicPlayer">
-<div class="player-placeholder"><span class="player-icon">♫</span><div><small>MINNIE'S VERY PERSONAL RADIO</small><p>Pick a track and play it right here.</p></div><span class="player-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></div>
-<audio id="localAudio" class="local-audio" controls preload="none" aria-label="Minnie’s music player"></audio>
-<p id="audioStatus" class="audio-status" aria-live="polite">On-page MP3 player · tap a track to start.</p>
+  <div class="player-banner">
+    <div class="player-record-stage" aria-hidden="true">
+      <div class="record-disc" id="recordDisc">
+        <div class="record-grooves"><div class="record-label" id="recordLabel"><span id="recordLabelSymbol">✳</span></div></div>
+        <span class="record-spindle"></span>
+      </div>
+      <div class="gramophone-arm" id="gramophoneArm"><span class="arm-pivot"></span><span class="arm-head"></span></div>
+      <span class="record-spark record-spark-one">✳</span><span class="record-spark record-spark-two">✧</span>
+    </div>
+    <div class="player-main">
+      <div class="player-topline"><span class="player-eyebrow">MINNIE'S VERY PERSONAL RADIO</span><span class="player-live"><i></i><span id="playerMode">READY WHEN YOU ARE</span></span></div>
+      <div class="player-track-info"><div class="player-track-copy"><h3 id="playerSongTitle">A little music for you.</h3><p id="playerSongArtist">Choose a track from the playlist above</p></div><span class="player-track-index" id="playerTrackIndex">✳ / 04</span></div>
+      <div class="player-seek-row"><span id="audioElapsed">0:00</span><input id="audioSeek" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek through track" disabled><span id="audioDuration">--:--</span></div>
+      <div class="player-bottom-row">
+        <div class="player-transport">
+          <button class="player-skip" id="playerPrevious" type="button" aria-label="Previous track" title="Previous track">|‹</button>
+          <button class="player-play" id="playerPlayButton" type="button" aria-label="Play selected track" title="Play"><span id="playerPlayIcon">▶</span></button>
+          <button class="player-skip" id="playerNext" type="button" aria-label="Next track" title="Next track">›|</button>
+        </div>
+        <div class="player-volume"><button id="playerMuteButton" type="button" aria-label="Mute audio" title="Mute audio">♫</button><input id="audioVolume" type="range" min="0" max="1" value="0.78" step="0.01" aria-label="Volume"></div>
+      </div>
+      <p id="audioStatus" class="audio-status" aria-live="polite">A tiny radio station, curated for one very specific human.</p>
+    </div>
+  </div>
+  <audio id="localAudio" preload="metadata" aria-label="Minnie’s music player"></audio>
 </div>
 <p class="music-note">♫ Plays local MP3 files inside Minnieverse. No redirects, no embedded video.</p>
 </section>
