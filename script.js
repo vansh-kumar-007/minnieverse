@@ -149,14 +149,14 @@ $("#partyButton")?.addEventListener("click", () => {
 // No iframe loads until Minnie (or the visitor) taps a track.
 const musicPlayer = $("#musicPlayer");
 const playerFrame = $("#playerFrame");
-$(".track[data-video-id]").forEach(track => {
+Array.from(document.querySelectorAll(".track[data-video-id]")).forEach(track => {
   track.setAttribute("aria-label", "Play " + track.dataset.trackTitle + " in the page");
   track.addEventListener("click", event => {
     event.preventDefault();
     const id = track.dataset.videoId;
     const title = track.dataset.trackTitle || "Minnie soundtrack";
     if (!playerFrame || !/^[A-Za-z0-9_-]{11}$/.test(id || "")) return;
-    $(".track").forEach(row => {
+    Array.from(document.querySelectorAll(".track")).forEach(row => {
       row.classList.toggle("is-playing", row === track);
       if (row === track) row.setAttribute("aria-current", "true");
       else row.removeAttribute("aria-current");
@@ -178,7 +178,7 @@ $(".track[data-video-id]").forEach(track => {
       $(".player-stop", placeholder)?.addEventListener("click", () => {
         playerFrame.innerHTML = "";
         musicPlayer.classList.remove("has-track");
-        $(".track").forEach(row => { row.classList.remove("is-playing"); row.removeAttribute("aria-current"); });
+        Array.from(document.querySelectorAll(".track")).forEach(row => { row.classList.remove("is-playing"); row.removeAttribute("aria-current"); });
         placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>MINNIE\'S VERY PERSONAL RADIO</small><p>Pick a track above and let it play right here.</p></div><span class="player-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
       });
     }
