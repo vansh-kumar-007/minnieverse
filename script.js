@@ -251,7 +251,6 @@ function selectTrack(track, autoplay = true) {
   // A new source starts directly from the tap, preserving mobile playback activation.
   audio.pause();
   audio.src = src;
-  audio.currentTime = 0;
   audio.load();
   if (audioSeek) audioSeek.value = "0";
   if (audioElapsed) audioElapsed.textContent = "0:00";
