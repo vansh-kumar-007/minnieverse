@@ -25,7 +25,7 @@ Then visit `http://localhost:8000`.
 ## Personalize the site
 
 - **Photos:** replace the three files in `assets/` while keeping their filenames, or update the image paths in `index.html`.
-  - `minnie-selfie.jpg` — hero portrait
+  - `minnie-selfie.webp` — hero portrait
   - `minnie-festive.webp` — scrapbook photo
   - `minnie-portrait.webp` — second scrapbook photo
 - **Captions:** edit the text under the photo cards in `index.html`.
