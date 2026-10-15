@@ -60,6 +60,50 @@ jobs:
               ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$file" | grep -qx mp3
             fi
           done
+      - name: Validate custom player controls and soundtrack paths
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class PlayerParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids = set()
+                  self.track_sources = []
+                  self.native_audio_controls = False
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  if attrs.get("id"):
+                      self.ids.add(attrs["id"])
+                  if attrs.get("data-audio-src"):
+                      self.track_sources.append(attrs["data-audio-src"])
+                  if tag == "audio" and "controls" in attrs:
+                      self.native_audio_controls = True
+
+          parser = PlayerParser()
+          html = Path("index.html").read_text(encoding="utf-8")
+          parser.feed(html)
+          required = {
+              "musicPlayer", "localAudio", "recordDisc", "recordLabelSymbol",
+              "playerSongTitle", "playerSongArtist", "playerTrackIndex", "playerMode",
+              "playerPlayButton", "playerPlayIcon", "playerPrevious", "playerNext",
+              "playerMuteButton", "audioSeek", "audioElapsed", "audioDuration", "audioVolume",
+              "audioStatus"
+          }
+          missing = sorted(required - parser.ids)
+          if missing:
+              raise SystemExit("Custom audio player is missing IDs: " + ", ".join(missing))
+          if parser.native_audio_controls:
+              raise SystemExit("Use custom-styled player controls, not native audio controls.")
+          if len(parser.track_sources) != 4:
+              raise SystemExit(f"Expected 4 local soundtrack buttons, found {len(parser.track_sources)}")
+          for src in parser.track_sources:
+              path = Path(src.removeprefix("./"))
+              if not path.is_file() or path.stat().st_size == 0:
+                  raise SystemExit(f"Missing/empty MP3 for a track button: {src}")
+          print("Custom player IDs, four local MP3 paths, and no external/native player controls verified.")
+          PY
       - name: Check referenced local assets
         run: |
           python - <<'PY'
