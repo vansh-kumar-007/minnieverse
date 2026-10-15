@@ -145,43 +145,99 @@ $("#partyButton")?.addEventListener("click", () => {
   );
 });
 
-// Stream through YouTube's official embed player in-page; never download or bundle copyrighted audio.
-// No iframe loads until Minnie (or the visitor) taps a track.
+// Local MP3 player: track buttons never navigate away from Minnieverse.
 const musicPlayer = $("#musicPlayer");
-const playerFrame = $("#playerFrame");
-Array.from(document.querySelectorAll(".track[data-video-id]")).forEach(track => {
-  track.setAttribute("aria-label", "Play " + track.dataset.trackTitle + " in the page");
-  track.addEventListener("click", event => {
-    event.preventDefault();
-    const id = track.dataset.videoId;
+const audio = $("#localAudio");
+const audioStatus = $("#audioStatus");
+let selectedTrack = null;
+const tracks = Array.from(document.querySelectorAll(".track[data-audio-src]"));
+
+function setTrackMessage(message) {
+  if (audioStatus) audioStatus.textContent = message;
+}
+
+function resetAudio() {
+  if (audio) {
+    audio.pause();
+    audio.removeAttribute("src");
+    audio.load();
+  }
+  musicPlayer?.classList.remove("has-track");
+  tracks.forEach(row => {
+    row.classList.remove("is-playing", "needs-file");
+    row.setAttribute("aria-pressed", "false");
+  });
+  selectedTrack = null;
+  setTrackMessage("On-page MP3 player · tap a track to start.");
+  const placeholder = $(".player-placeholder", musicPlayer);
+  if (placeholder) {
+    placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>MINNIE\'S VERY PERSONAL RADIO</small><p>Pick a track and play it right here.</p></div><span class="player-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
+  }
+}
+
+tracks.forEach(track => {
+  track.setAttribute("aria-controls", "localAudio");
+  track.addEventListener("click", async () => {
+    const src = track.dataset.audioSrc;
     const title = track.dataset.trackTitle || "Minnie soundtrack";
-    if (!playerFrame || !/^[A-Za-z0-9_-]{11}$/.test(id || "")) return;
-    Array.from(document.querySelectorAll(".track")).forEach(row => {
+    if (!audio || !musicPlayer || !src || !src.startsWith("./assets/audio/")) return;
+
+    selectedTrack = track;
+    tracks.forEach(row => {
       row.classList.toggle("is-playing", row === track);
-      if (row === track) row.setAttribute("aria-current", "true");
-      else row.removeAttribute("aria-current");
+      row.classList.remove("needs-file");
+      row.setAttribute("aria-pressed", String(row === track));
     });
-    if (musicPlayer) musicPlayer.classList.add("has-track");
-    playerFrame.innerHTML = "";
-    const frame = document.createElement("iframe");
-    frame.src = "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(id) + "?autoplay=1&rel=0&modestbranding=1";
-    frame.title = "Now playing: " + title;
-    frame.loading = "eager";
-    frame.allow = "autoplay; encrypted-media; picture-in-picture; web-share";
-    frame.referrerPolicy = "strict-origin-when-cross-origin";
-    frame.allowFullscreen = true;
-    playerFrame.appendChild(frame);
+    musicPlayer.classList.add("has-track");
     const placeholder = $(".player-placeholder", musicPlayer);
     if (placeholder) {
-      placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>NOW PLAYING IN MINNIEVERSE</small><p></p></div><button class="player-stop" type="button" aria-label="Stop music">×</button>';
+      placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>MINNIE\'S VERY PERSONAL RADIO</small><p></p></div><button class="player-stop" type="button" aria-label="Stop music">×</button>';
       $("p", placeholder).textContent = title;
-      $(".player-stop", placeholder)?.addEventListener("click", () => {
-        playerFrame.innerHTML = "";
-        musicPlayer.classList.remove("has-track");
-        Array.from(document.querySelectorAll(".track")).forEach(row => { row.classList.remove("is-playing"); row.removeAttribute("aria-current"); });
-        placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>MINNIE\'S VERY PERSONAL RADIO</small><p>Pick a track above and let it play right here.</p></div><span class="player-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
-      });
+      $(".player-stop", placeholder)?.addEventListener("click", resetAudio);
     }
-    if (!reduceMotion) musicPlayer?.scrollIntoView({behavior:"smooth",block:"nearest"});
+    setTrackMessage("Checking for the local MP3…");
+
+    // Check first so a missing MP3 produces a clear message instead of a broken player.
+    try {
+      const response = await fetch(src, { method: "HEAD", cache: "no-store" });
+      if (selectedTrack !== track) return;
+      if (!response.ok || !/^audio\//i.test(response.headers.get("content-type") || "")) {
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+        musicPlayer.classList.remove("has-track");
+        track.classList.add("needs-file");
+        setTrackMessage("MP3 not installed yet. Add " + src.replace("./", "") + " to the repository using a copy you’re licensed to host.");
+        return;
+      }
+      audio.src = src;
+      audio.load();
+      try {
+        await audio.play();
+        setTrackMessage("Now playing · " + title);
+      } catch (error) {
+        if (error?.name === "NotAllowedError") setTrackMessage("Tap play in the audio controls to start " + title + ".");
+        else setTrackMessage("Couldn’t play this MP3. Check the file and try again.");
+      }
+    } catch (error) {
+      if (selectedTrack === track) {
+        musicPlayer.classList.remove("has-track");
+        track.classList.add("needs-file");
+        setTrackMessage("MP3 not installed yet. Add " + src.replace("./", "") + " to the repository using a copy you’re licensed to host.");
+      }
+    }
   });
 });
+
+audio?.addEventListener("playing", () => {
+  if (selectedTrack) setTrackMessage("Now playing · " + (selectedTrack.dataset.trackTitle || "Minnie soundtrack"));
+});
+audio?.addEventListener("error", () => {
+  if (!selectedTrack) return;
+  musicPlayer?.classList.remove("has-track");
+  selectedTrack.classList.add("needs-file");
+  setTrackMessage("This MP3 could not be loaded. Check " + (selectedTrack.dataset.audioSrc || "the audio file") + ".");
+});
+
+// External links elsewhere on the page remain safe; the soundtrack has no external links.
+$('a[target="_blank"]').forEach(a => a.setAttribute("rel","noopener noreferrer"));
