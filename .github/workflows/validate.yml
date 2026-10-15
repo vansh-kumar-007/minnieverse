@@ -18,6 +18,37 @@ jobs:
         uses: actions/checkout@v4
       - name: Check JavaScript syntax
         run: node --check script.js
+      - name: Verify local soundtrack files are decodable MP3s
+        run: |
+          set -euo pipefail
+          files=(
+            assets/audio/doraemon.mp3
+            assets/audio/tame-impala.mp3
+            assets/audio/maneskin-beggin.mp3
+            assets/audio/maneskin-i-wanna-be-your-slave.mp3
+          )
+          for file in "${files[@]}"; do
+            test -s "$file" || { echo "Missing or empty soundtrack file: $file"; exit 1; }
+            echo "Checking $file ($(stat -c%s "$file") bytes)"
+            if ! command -v ffprobe >/dev/null 2>&1; then
+              echo "ffprobe is unavailable on this runner"
+              file "$file"
+              python - "$file" <<'PY'
+          import sys
+          from pathlib import Path
+          p = Path(sys.argv[1])
+          with p.open("rb") as f:
+              head = f.read(16)
+          valid = head.startswith(b"ID3") or (len(head) >= 2 and head[0] == 0xff and (head[1] & 0xe0) == 0xe0)
+          print(f"header={head.hex()} likely_mp3={valid}")
+          if not valid:
+              raise SystemExit(f"{p} does not have an MP3 frame/ID3 header")
+          PY
+            else
+              ffprobe -v error -select_streams a:0 -show_entries stream=codec_name,sample_rate,channels -show_entries format=duration -of default=noprint_wrappers=1 "$file"
+              ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$file" | grep -qx mp3
+            fi
+          done
       - name: Check referenced local assets
         run: |
           python - <<'PY'
