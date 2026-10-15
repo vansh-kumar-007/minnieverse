@@ -145,94 +145,255 @@ $("#partyButton")?.addEventListener("click", () => {
   );
 });
 
-// Local MP3 player: track buttons never navigate away from Minnieverse.
+// Minnieverse local soundtrack — custom controls, no external redirects.
 const musicPlayer = $("#musicPlayer");
 const audio = $("#localAudio");
 const audioStatus = $("#audioStatus");
+const playerSongTitle = $("#playerSongTitle");
+const playerSongArtist = $("#playerSongArtist");
+const playerTrackIndex = $("#playerTrackIndex");
+const playerMode = $("#playerMode");
+const playerPlayButton = $("#playerPlayButton");
+const playerPlayIcon = $("#playerPlayIcon");
+const playerPrevious = $("#playerPrevious");
+const playerNext = $("#playerNext");
+const playerMuteButton = $("#playerMuteButton");
+const audioSeek = $("#audioSeek");
+const audioElapsed = $("#audioElapsed");
+const audioDuration = $("#audioDuration");
+const audioVolume = $("#audioVolume");
+const recordLabel = $("#recordLabel");
+const recordLabelSymbol = $("#recordLabelSymbol");
 let selectedTrack = null;
+let previousVolume = 0.78;
 const tracks = Array.from(document.querySelectorAll(".track[data-audio-src]"));
 
 function setTrackMessage(message) {
   if (audioStatus) audioStatus.textContent = message;
 }
 
-function resetAudio() {
-  if (audio) {
-    audio.pause();
-    audio.removeAttribute("src");
-    audio.load();
+function formatTime(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "--:--";
+  const whole = Math.floor(seconds);
+  return Math.floor(whole / 60) + ":" + String(whole % 60).padStart(2, "0");
+}
+
+function updatePlayState() {
+  if (!audio || !musicPlayer) return;
+  const playing = !audio.paused && !audio.ended;
+  musicPlayer.classList.toggle("is-playing", playing);
+  if (playerPlayButton) {
+    playerPlayButton.setAttribute("aria-label", playing ? "Pause music" : "Play selected track");
+    playerPlayButton.setAttribute("title", playing ? "Pause" : "Play");
   }
-  musicPlayer?.classList.remove("has-track");
-  tracks.forEach(row => {
-    row.classList.remove("is-playing", "needs-file");
-    row.setAttribute("aria-pressed", "false");
+  if (playerPlayIcon) playerPlayIcon.textContent = playing ? "Ⅱ" : "▶";
+  if (playerMode) playerMode.textContent = playing ? "NOW SPINNING" : selectedTrack ? "PAUSED, FOR DRAMATIC EFFECT" : "READY WHEN YOU ARE";
+}
+
+function updateSeekDisplay() {
+  if (!audio) return;
+  const duration = audio.duration;
+  const current = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+  if (audioElapsed) audioElapsed.textContent = formatTime(current);
+  if (audioDuration) audioDuration.textContent = formatTime(duration);
+  if (audioSeek) {
+    audioSeek.disabled = !Number.isFinite(duration) || duration <= 0;
+    if (!audioSeek.matches(":active") && Number.isFinite(duration) && duration > 0) {
+      audioSeek.value = String(Math.round((current / duration) * 1000));
+    }
+    audioSeek.style.setProperty("--seek-progress", Number.isFinite(duration) && duration > 0 ? (current / duration * 100) + "%" : "0%");
+  }
+}
+
+function syncVolumeUI() {
+  if (!audio || !audioVolume || !playerMuteButton) return;
+  audioVolume.value = String(audio.muted ? 0 : audio.volume);
+  playerMuteButton.textContent = audio.muted || audio.volume === 0 ? "×" : audio.volume < 0.45 ? "♪" : "♫";
+  playerMuteButton.setAttribute("aria-label", audio.muted || audio.volume === 0 ? "Unmute audio" : "Mute audio");
+  playerMuteButton.setAttribute("title", audio.muted || audio.volume === 0 ? "Unmute" : "Mute");
+  audioVolume.style.setProperty("--volume-progress", ((audio.muted ? 0 : audio.volume) * 100) + "%");
+}
+
+function updateRecordLabel(track) {
+  if (!track) return;
+  const artwork = $(".track-art", track);
+  if (recordLabelSymbol && artwork) recordLabelSymbol.textContent = artwork.textContent.trim();
+  if (recordLabel) {
+    recordLabel.classList.remove("art-cream", "art-sage", "art-rust", "art-dark");
+    ["art-cream", "art-sage", "art-rust", "art-dark"].forEach(name => {
+      if (artwork?.classList.contains(name)) recordLabel.classList.add(name);
+    });
+  }
+}
+
+function selectTrack(track, autoplay = true) {
+  if (!audio || !musicPlayer || !track) return;
+  const src = track.dataset.audioSrc;
+  if (!src || !src.startsWith("./assets/audio/")) return;
+
+  selectedTrack = track;
+  const index = tracks.indexOf(track);
+  const title = $(".track-text b", track)?.textContent.trim() || track.dataset.trackTitle || "Minnie soundtrack";
+  const subtitle = $(".track-text small", track)?.textContent.trim() || track.dataset.trackTitle || "A song for Minnie";
+  tracks.forEach((row, rowIndex) => {
+    row.classList.toggle("is-playing", row === track);
+    row.classList.remove("needs-file");
+    row.setAttribute("aria-pressed", String(row === track));
+    row.setAttribute("aria-current", row === track ? "true" : "false");
   });
-  selectedTrack = null;
-  setTrackMessage("On-page MP3 player · tap a track to start.");
-  const placeholder = $(".player-placeholder", musicPlayer);
-  if (placeholder) {
-    placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>MINNIE\'S VERY PERSONAL RADIO</small><p>Pick a track and play it right here.</p></div><span class="player-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
+
+  if (playerSongTitle) playerSongTitle.textContent = title;
+  if (playerSongArtist) playerSongArtist.textContent = subtitle;
+  if (playerTrackIndex) playerTrackIndex.textContent = String(index + 1).padStart(2, "0") + " / " + String(tracks.length).padStart(2, "0");
+  updateRecordLabel(track);
+  musicPlayer.classList.add("has-track");
+
+  // A new source starts directly from the tap, preserving mobile playback activation.
+  audio.pause();
+  audio.src = src;
+  audio.currentTime = 0;
+  audio.load();
+  if (audioSeek) audioSeek.value = "0";
+  if (audioElapsed) audioElapsed.textContent = "0:00";
+  if (audioDuration) audioDuration.textContent = "--:--";
+  setTrackMessage("Putting on · " + subtitle);
+  updatePlayState();
+  updateSeekDisplay();
+
+  if (autoplay) {
+    const request = audio.play();
+    if (request && typeof request.then === "function") {
+      request.then(() => {
+        if (selectedTrack === track) {
+          setTrackMessage("Now playing · " + subtitle);
+          updatePlayState();
+        }
+      }).catch(error => {
+        if (selectedTrack !== track) return;
+        if (error?.name === "NotAllowedError") {
+          setTrackMessage("Tap the large play button to start the record.");
+        } else if (error?.name === "NotSupportedError") {
+          setTrackMessage("This audio file format isn't supported. Check " + src.replace("./", "") + ".");
+          track.classList.add("needs-file");
+        } else {
+          setTrackMessage("Couldn't start playback. Check the MP3 file and try again.");
+          track.classList.add("needs-file");
+        }
+        updatePlayState();
+      });
+    }
+  } else {
+    setTrackMessage("Selected · " + subtitle);
   }
+}
+
+function togglePlayback() {
+  if (!audio) return;
+  if (!selectedTrack) {
+    selectTrack(tracks[0], true);
+    return;
+  }
+  if (audio.paused || audio.ended) {
+    const request = audio.play();
+    if (request && typeof request.then === "function") {
+      request.then(() => {
+        const subtitle = $(".track-text small", selectedTrack)?.textContent.trim() || selectedTrack.dataset.trackTitle;
+        setTrackMessage("Now playing · " + subtitle);
+        updatePlayState();
+      }).catch(error => {
+        setTrackMessage(error?.name === "NotAllowedError" ? "Tap play again to start the record." : "Couldn't play this track. Check the MP3 file.");
+      });
+    }
+  } else {
+    audio.pause();
+    setTrackMessage("Paused · the record is taking a tiny breather.");
+  }
+  updatePlayState();
+}
+
+function moveTrack(direction) {
+  if (!tracks.length) return;
+  const currentIndex = selectedTrack ? tracks.indexOf(selectedTrack) : (direction > 0 ? -1 : 0);
+  const nextIndex = (currentIndex + direction + tracks.length) % tracks.length;
+  selectTrack(tracks[nextIndex], true);
 }
 
 tracks.forEach(track => {
   track.setAttribute("aria-controls", "localAudio");
   track.addEventListener("click", () => {
-    const src = track.dataset.audioSrc;
-    const title = track.dataset.trackTitle || "Minnie soundtrack";
-    if (!audio || !musicPlayer || !src || !src.startsWith("./assets/audio/")) return;
-
-    selectedTrack = track;
-    tracks.forEach(row => {
-      row.classList.toggle("is-playing", row === track);
-      row.classList.remove("needs-file");
-      row.setAttribute("aria-pressed", String(row === track));
-    });
-    musicPlayer.classList.add("has-track");
-
-    const placeholder = $(".player-placeholder", musicPlayer);
-    if (placeholder) {
-      placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>MINNIE&#39;S VERY PERSONAL RADIO</small><p></p></div><button class="player-stop" type="button" aria-label="Stop music">×</button>';
-      $("p", placeholder).textContent = title;
-      $(".player-stop", placeholder)?.addEventListener("click", resetAudio);
+    if (selectedTrack === track && audio && !audio.paused) {
+      audio.pause();
+      setTrackMessage("Paused · " + ($(".track-text small", track)?.textContent.trim() || "Minnie soundtrack"));
+      updatePlayState();
+      return;
     }
-
-    // Start loading and request playback directly in the tap handler. An awaited
-    // HEAD request here can lose the browser's user-activation permission on mobile.
-    setTrackMessage("Loading · " + title);
-    audio.pause();
-    audio.src = src;
-    audio.load();
-
-    const playRequest = audio.play();
-    if (playRequest && typeof playRequest.then === "function") {
-      playRequest.then(() => {
-        if (selectedTrack === track) setTrackMessage("Now playing · " + title);
-      }).catch(error => {
-        if (selectedTrack !== track) return;
-        if (error?.name === "NotAllowedError") {
-          setTrackMessage("Tap play in the audio controls to start " + title + ".");
-        } else if (error?.name === "NotSupportedError") {
-          setTrackMessage("This audio file format isn't supported. Check " + src.replace("./", "") + ".");
-          track.classList.add("needs-file");
-        } else {
-          setTrackMessage("Couldn't start playback. Check your connection and the file at " + src.replace("./", "") + ".");
-          track.classList.add("needs-file");
-        }
-      });
-    }
+    selectTrack(track, true);
   });
 });
 
-audio?.addEventListener("playing", () => {
-  if (selectedTrack) setTrackMessage("Now playing · " + (selectedTrack.dataset.trackTitle || "Minnie soundtrack"));
+playerPlayButton?.addEventListener("click", togglePlayback);
+playerPrevious?.addEventListener("click", () => moveTrack(-1));
+playerNext?.addEventListener("click", () => moveTrack(1));
+
+audioSeek?.addEventListener("input", () => {
+  if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
+  const fraction = Number(audioSeek.value) / 1000;
+  audioSeek.style.setProperty("--seek-progress", (fraction * 100) + "%");
+  if (audioElapsed) audioElapsed.textContent = formatTime(fraction * audio.duration);
 });
-audio?.addEventListener("error", () => {
-  if (!selectedTrack) return;
-  musicPlayer?.classList.remove("has-track");
-  selectedTrack.classList.add("needs-file");
-  setTrackMessage("Audio could not be loaded (" + (audio.error?.code || "unknown error") + "). Check " + (selectedTrack.dataset.audioSrc || "the MP3 file") + ".");
+audioSeek?.addEventListener("change", () => {
+  if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
+  audio.currentTime = (Number(audioSeek.value) / 1000) * audio.duration;
+  updateSeekDisplay();
 });
 
-// External links elsewhere on the page remain safe; the soundtrack has no external links.
+audioVolume?.addEventListener("input", () => {
+  if (!audio || !audioVolume) return;
+  const value = Number(audioVolume.value);
+  audio.volume = Math.max(0, Math.min(1, value));
+  audio.muted = value === 0;
+  if (value > 0) previousVolume = value;
+  syncVolumeUI();
+});
+playerMuteButton?.addEventListener("click", () => {
+  if (!audio) return;
+  if (audio.muted || audio.volume === 0) {
+    audio.muted = false;
+    audio.volume = previousVolume || 0.78;
+  } else {
+    previousVolume = audio.volume;
+    audio.muted = true;
+  }
+  syncVolumeUI();
+});
+
+audio?.addEventListener("loadedmetadata", updateSeekDisplay);
+audio?.addEventListener("durationchange", updateSeekDisplay);
+audio?.addEventListener("timeupdate", updateSeekDisplay);
+audio?.addEventListener("play", updatePlayState);
+audio?.addEventListener("pause", updatePlayState);
+audio?.addEventListener("playing", () => {
+  updatePlayState();
+  if (selectedTrack) {
+    const subtitle = $(".track-text small", selectedTrack)?.textContent.trim() || selectedTrack.dataset.trackTitle;
+    setTrackMessage("Now playing · " + subtitle);
+  }
+});
+audio?.addEventListener("ended", () => moveTrack(1));
+audio?.addEventListener("volumechange", syncVolumeUI);
+audio?.addEventListener("error", () => {
+  if (!selectedTrack) return;
+  musicPlayer?.classList.remove("is-playing");
+  selectedTrack.classList.add("needs-file");
+  if (playerMode) playerMode.textContent = "NEEDS A LITTLE HELP";
+  setTrackMessage("Audio couldn't be loaded (error " + (audio.error?.code || "unknown") + "). Check " + selectedTrack.dataset.audioSrc + ".");
+  updatePlayState();
+});
+
+if (audio) audio.volume = 0.78;
+syncVolumeUI();
+updatePlayState();
+updateSeekDisplay();
+
+// External links elsewhere on the page remain safe; soundtrack items are local buttons.
 $$('a[target="_blank"]').forEach(a => a.setAttribute("rel","noopener noreferrer"));
