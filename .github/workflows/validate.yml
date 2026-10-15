@@ -18,6 +18,17 @@ jobs:
         uses: actions/checkout@v4
       - name: Check JavaScript syntax
         run: node --check script.js
+      - name: Guard against single-element selector iteration bugs
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          source = Path("script.js").read_text(encoding="utf-8")
+          bad = re.findall(r'(?<!\$)\$\([^)]*\)\.forEach\s*\(', source)
+          if bad:
+              raise SystemExit("Use $$(...) for NodeList iteration, not $(...): " + repr(bad))
+          print("Selector iteration check passed.")
+          PY
       - name: Verify local soundtrack files are decodable MP3s
         run: |
           set -euo pipefail
