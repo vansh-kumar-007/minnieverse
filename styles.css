@@ -72,3 +72,29 @@
 @keyframes sticker-drift{0%,100%{transform:rotate(7deg) translateY(0)}50%{transform:rotate(4deg) translateY(-5px)}}
 @keyframes sticker-drift-reverse{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(-5deg) translateY(5px)}}
 @media(prefers-reduced-motion:reduce){.sticker-top,.sticker-side{animation:none}}
+
+
+/* Native, self-hosted MP3 controls and button-based playlist */
+.track{
+  display:grid;
+  border:0;
+  border-bottom:1px solid var(--line);
+  border-radius:0;
+  appearance:none;
+  -webkit-appearance:none;
+  padding:20px 8px;
+  text-decoration:none;
+}
+.track:hover{background:rgba(135,144,120,.10)}
+.track:active{transform:translateY(1px)}
+.track.needs-file{background:rgba(117,75,57,.08)}
+.track.needs-file .arrow{color:var(--rust)}
+.local-audio{display:none;width:calc(100% - 48px);margin:0 24px 12px;accent-color:var(--forest)}
+.music-player.has-track .local-audio{display:block}
+.audio-status{font:10px var(--mono);line-height:1.7;letter-spacing:.025em;color:var(--forest);padding:0 24px 18px;margin:0;overflow-wrap:anywhere}
+.music-player.has-track .audio-status{padding-bottom:16px}
+@media(max-width:640px){
+  .track{padding:16px 5px}
+  .local-audio{width:calc(100% - 28px);margin:0 14px 10px}
+  .audio-status{padding:0 14px 14px;font-size:9px}
+}
