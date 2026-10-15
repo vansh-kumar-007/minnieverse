@@ -177,7 +177,7 @@ function resetAudio() {
 
 tracks.forEach(track => {
   track.setAttribute("aria-controls", "localAudio");
-  track.addEventListener("click", async () => {
+  track.addEventListener("click", () => {
     const src = track.dataset.audioSrc;
     const title = track.dataset.trackTitle || "Minnie soundtrack";
     if (!audio || !musicPlayer || !src || !src.startsWith("./assets/audio/")) return;
@@ -189,42 +189,37 @@ tracks.forEach(track => {
       row.setAttribute("aria-pressed", String(row === track));
     });
     musicPlayer.classList.add("has-track");
+
     const placeholder = $(".player-placeholder", musicPlayer);
     if (placeholder) {
-      placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>MINNIE\'S VERY PERSONAL RADIO</small><p></p></div><button class="player-stop" type="button" aria-label="Stop music">×</button>';
+      placeholder.innerHTML = '<span class="player-icon">♫</span><div><small>MINNIE\\'S VERY PERSONAL RADIO</small><p></p></div><button class="player-stop" type="button" aria-label="Stop music">×</button>';
       $("p", placeholder).textContent = title;
       $(".player-stop", placeholder)?.addEventListener("click", resetAudio);
     }
-    setTrackMessage("Checking for the local MP3…");
 
-    // Check first so a missing MP3 produces a clear message instead of a broken player.
-    try {
-      const response = await fetch(src, { method: "HEAD", cache: "no-store" });
-      if (selectedTrack !== track) return;
-      if (!response.ok || !/^audio\//i.test(response.headers.get("content-type") || "")) {
-        audio.pause();
-        audio.removeAttribute("src");
-        audio.load();
-        musicPlayer.classList.remove("has-track");
-        track.classList.add("needs-file");
-        setTrackMessage("MP3 not installed yet. Add " + src.replace("./", "") + " to the repository using a copy you’re licensed to host.");
-        return;
-      }
-      audio.src = src;
-      audio.load();
-      try {
-        await audio.play();
-        setTrackMessage("Now playing · " + title);
-      } catch (error) {
-        if (error?.name === "NotAllowedError") setTrackMessage("Tap play in the audio controls to start " + title + ".");
-        else setTrackMessage("Couldn’t play this MP3. Check the file and try again.");
-      }
-    } catch (error) {
-      if (selectedTrack === track) {
-        musicPlayer.classList.remove("has-track");
-        track.classList.add("needs-file");
-        setTrackMessage("MP3 not installed yet. Add " + src.replace("./", "") + " to the repository using a copy you’re licensed to host.");
-      }
+    // Start loading and request playback directly in the tap handler. An awaited
+    // HEAD request here can lose the browser's user-activation permission on mobile.
+    setTrackMessage("Loading · " + title);
+    audio.pause();
+    audio.src = src;
+    audio.load();
+
+    const playRequest = audio.play();
+    if (playRequest && typeof playRequest.then === "function") {
+      playRequest.then(() => {
+        if (selectedTrack === track) setTrackMessage("Now playing · " + title);
+      }).catch(error => {
+        if (selectedTrack !== track) return;
+        if (error?.name === "NotAllowedError") {
+          setTrackMessage("Tap play in the audio controls to start " + title + ".");
+        } else if (error?.name === "NotSupportedError") {
+          setTrackMessage("This audio file format isn't supported. Check " + src.replace("./", "") + ".");
+          track.classList.add("needs-file");
+        } else {
+          setTrackMessage("Couldn't start playback. Check your connection and the file at " + src.replace("./", "") + ".");
+          track.classList.add("needs-file");
+        }
+      });
     }
   });
 });
@@ -236,7 +231,7 @@ audio?.addEventListener("error", () => {
   if (!selectedTrack) return;
   musicPlayer?.classList.remove("has-track");
   selectedTrack.classList.add("needs-file");
-  setTrackMessage("This MP3 could not be loaded. Check " + (selectedTrack.dataset.audioSrc || "the audio file") + ".");
+  setTrackMessage("Audio could not be loaded (" + (audio.error?.code || "unknown error") + "). Check " + (selectedTrack.dataset.audioSrc || "the MP3 file") + ".");
 });
 
 // External links elsewhere on the page remain safe; the soundtrack has no external links.
