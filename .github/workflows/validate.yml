@@ -1,0 +1,45 @@
+name: Validate Minnieverse
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: node --check script.js
+      - name: Check referenced local assets
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re
+          class PageParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.refs = []
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  for attr in ("src", "href"):
+                      value = attrs.get(attr, "")
+                      if value.startswith("./assets/"):
+                          self.refs.append(value[2:])
+          parser = PageParser()
+          parser.feed(Path("index.html").read_text(encoding="utf-8"))
+          missing = [ref for ref in parser.refs if not Path(ref).is_file()]
+          if missing:
+              raise SystemExit("Missing local assets: " + ", ".join(missing))
+          if Path("index.html").stat().st_size < 5000:
+              raise SystemExit("index.html looks unexpectedly small")
+          print(f"Checked {len(parser.refs)} local asset references.")
+          PY
