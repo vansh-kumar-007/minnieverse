@@ -98,3 +98,232 @@
   .local-audio{width:calc(100% - 28px);margin:0 14px 10px}
   .audio-status{padding:0 14px 14px;font-size:9px}
 }
+
+
+/* Minnie’s listening room — custom vinyl banner, inspired by modern streaming players. */
+.music-player{
+  margin-top:24px;
+  border:1px solid rgba(53,76,60,.34);
+  border-radius:3px;
+  background:var(--forest);
+  overflow:hidden;
+  box-shadow:0 18px 38px rgba(41,45,40,.12);
+  transition:box-shadow .35s,border-color .35s,transform .35s;
+}
+.music-player.has-track{border-color:rgba(53,76,60,.65)}
+.music-player.is-playing{box-shadow:0 20px 44px rgba(41,45,40,.18)}
+.player-banner{
+  position:relative;
+  isolation:isolate;
+  display:grid;
+  grid-template-columns:184px minmax(0,1fr);
+  align-items:center;
+  gap:28px;
+  min-height:220px;
+  padding:25px 29px 23px 22px;
+  color:var(--paper);
+  background:
+    radial-gradient(ellipse at 11% 50%,rgba(135,144,120,.24),transparent 44%),
+    linear-gradient(112deg,#354C3C 0%,#303d31 58%,#292D28 100%);
+}
+.player-banner:after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:270px;height:270px;
+  right:-105px;top:-148px;
+  border:1px solid rgba(233,226,208,.1);
+  border-radius:50%;
+  box-shadow:0 0 0 24px rgba(233,226,208,.018),0 0 0 50px rgba(233,226,208,.018);
+  pointer-events:none;
+}
+.player-record-stage{
+  width:174px;height:174px;
+  position:relative;
+  display:grid;place-items:center;
+  justify-self:center;
+}
+.record-disc{
+  width:148px;height:148px;
+  position:relative;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 27% 23%,rgba(255,255,255,.12),transparent 25%),
+    repeating-radial-gradient(circle at center,#343a31 0 1px,#161b17 2px 4px,#292f28 5px 6px,#171c18 7px 9px);
+  border:1px solid rgba(233,226,208,.28);
+  box-shadow:0 10px 22px rgba(0,0,0,.25),inset 0 0 0 7px rgba(0,0,0,.12);
+  transform:rotate(-12deg);
+  transition:filter .5s,transform .5s;
+}
+.record-disc:before{
+  content:"";
+  position:absolute;inset:9px;border-radius:50%;
+  border:1px solid rgba(233,226,208,.11);
+  box-shadow:0 0 0 11px rgba(233,226,208,.025),0 0 0 22px rgba(233,226,208,.025),0 0 0 33px rgba(233,226,208,.02);
+  pointer-events:none;
+}
+.record-grooves{
+  position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 40deg,transparent,rgba(233,226,208,.1),transparent 18%,rgba(0,0,0,.18),transparent 47%,rgba(233,226,208,.08),transparent 70%);
+}
+.record-label{
+  width:54px;height:54px;
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  display:grid;place-items:center;
+  border-radius:50%;
+  border:3px double rgba(233,226,208,.72);
+  background:#879078;
+  color:#292D28;
+  box-shadow:0 0 0 2px rgba(0,0,0,.35);
+}
+.record-label span{font:22px var(--serif);line-height:1}
+.record-label.art-cream{background:#d7c8a9}
+.record-label.art-sage{background:#b7c0aa}
+.record-label.art-rust{background:#c49d83}
+.record-label.art-dark{background:#354C3C;color:#E9E2D0}
+.record-spindle{
+  position:absolute;left:50%;top:50%;
+  width:5px;height:5px;border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:#f2ead8;border:1px solid #292d28;
+  z-index:2;
+}
+.music-player.is-playing .record-disc{animation:vinyl-revolution 8s linear infinite;filter:brightness(1.07)}
+.gramophone-arm{
+  position:absolute;z-index:3;right:2px;top:5px;
+  width:43px;height:71px;
+  border:3px solid #c4c7b1;
+  border-left-color:transparent;border-bottom-color:transparent;
+  border-radius:0 24px 0 0;
+  transform:rotate(8deg);
+  transform-origin:top right;
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.25));
+  transition:transform .55s cubic-bezier(.2,.7,.2,1);
+}
+.arm-pivot{
+  position:absolute;right:-6px;top:-6px;
+  width:13px;height:13px;border-radius:50%;
+  background:#d5cfbc;border:3px solid #879078;
+  box-shadow:0 0 0 2px rgba(0,0,0,.25);
+}
+.arm-head{
+  position:absolute;left:-3px;bottom:-2px;
+  width:12px;height:19px;
+  border-radius:2px 2px 4px 4px;
+  background:#c7bfa9;border:2px solid #4a5143;
+  transform:rotate(-20deg);
+}
+.music-player.is-playing .gramophone-arm{transform:rotate(1deg) translate(-1px,2px)}
+.record-spark{position:absolute;color:#d7c8a9;font-size:14px;opacity:.75}
+.record-spark-one{left:1px;top:17px}
+.record-spark-two{right:1px;bottom:13px;font-size:18px}
+.music-player.is-playing .record-spark-one{animation:record-twinkle 2.9s ease-in-out infinite}
+.music-player.is-playing .record-spark-two{animation:record-twinkle 3.5s .6s ease-in-out infinite}
+.player-main{min-width:0;position:relative;z-index:1}
+.player-topline{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.player-eyebrow{font:8px var(--mono);letter-spacing:.16em;color:#d8d8c4}
+.player-live{display:flex;align-items:center;gap:7px;color:#bdc5ae;font:7px var(--mono);letter-spacing:.1em;white-space:nowrap}
+.player-live i{width:5px;height:5px;border-radius:50%;background:#aeb99c;box-shadow:0 0 0 3px rgba(174,185,156,.12)}
+.music-player.is-playing .player-live i{background:#d6c79c;box-shadow:0 0 0 3px rgba(214,199,156,.13);animation:live-pulse 2s ease-in-out infinite}
+.player-track-info{display:flex;align-items:start;justify-content:space-between;gap:14px;margin-top:19px;min-width:0}
+.player-track-copy{min-width:0}
+.player-track-info h3{margin:0;color:#f3eddd;font:500 clamp(19px,2.1vw,26px)/1.2 var(--serif);letter-spacing:-.025em;overflow-wrap:anywhere}
+.player-track-info p{font:10px/1.6 var(--sans);color:#c2c9b8;margin:6px 0 0}
+.player-track-index{font:8px var(--mono);letter-spacing:.12em;color:#c7a78f;white-space:nowrap;padding-top:5px}
+.player-seek-row{display:grid;grid-template-columns:31px minmax(45px,1fr) 31px;gap:10px;align-items:center;margin-top:19px}
+.player-seek-row span{font:8px var(--mono);font-variant-numeric:tabular-nums;color:#c4cbbb}
+.player-seek-row span:last-child{text-align:right}
+#audioSeek,.player-volume input{
+  appearance:none;-webkit-appearance:none;
+  display:block;width:100%;min-width:0;height:4px;margin:0;
+  border:0;border-radius:10px;outline:0;cursor:pointer;
+  background:linear-gradient(to right,#d5c8a6 0%,#d5c8a6 var(--seek-progress,0%),rgba(233,226,208,.25) var(--seek-progress,0%),rgba(233,226,208,.25) 100%);
+}
+#audioSeek:disabled{cursor:default;opacity:.6}
+#audioSeek::-webkit-slider-thumb,.player-volume input::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:10px;height:10px;border-radius:50%;
+  background:#e9e2d0;border:1px solid #354c3c;box-shadow:0 0 0 2px rgba(233,226,208,.12);
+}
+#audioSeek::-moz-range-thumb,.player-volume input::-moz-range-thumb{
+  width:9px;height:9px;border-radius:50%;background:#e9e2d0;border:1px solid #354c3c;
+}
+#audioSeek:focus-visible,.player-volume input:focus-visible{outline:1px solid #d5c8a6;outline-offset:7px}
+.player-bottom-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px}
+.player-transport{display:flex;align-items:center;gap:17px}
+.player-skip{
+  border:0;background:none;padding:5px;
+  color:#d5dacb;font:500 17px var(--sans);line-height:1;
+  cursor:pointer;transition:color .2s,transform .2s;
+}
+.player-skip:hover{color:#fff4d9;transform:scale(1.12)}
+.player-play{
+  display:grid;place-items:center;
+  width:38px;height:38px;border-radius:50%;
+  border:1px solid rgba(233,226,208,.48);
+  background:#e9e2d0;color:#354c3c;
+  cursor:pointer;font:13px var(--sans);
+  box-shadow:0 3px 8px rgba(0,0,0,.1);
+  transition:transform .2s,background .2s,box-shadow .2s;
+}
+.player-play:hover{transform:scale(1.06);background:#fff7e8;box-shadow:0 5px 15px rgba(0,0,0,.17)}
+.player-play:active{transform:scale(.96)}
+.player-play:focus-visible,.player-skip:focus-visible,.player-volume button:focus-visible{outline:2px solid #e9e2d0;outline-offset:3px}
+.player-volume{display:flex;align-items:center;gap:8px;min-width:100px;max-width:132px}
+.player-volume button{width:23px;height:26px;border:0;padding:0;background:none;color:#d5dacb;cursor:pointer;font:17px var(--serif)}
+.player-volume input{height:3px;flex:1;background:linear-gradient(to right,#d5c8a6 0%,#d5c8a6 var(--volume-progress,78%),rgba(233,226,208,.25) var(--volume-progress,78%),rgba(233,226,208,.25) 100%)}
+.player-volume input::-webkit-slider-thumb{width:8px;height:8px}
+.player-volume input::-moz-range-thumb{width:7px;height:7px}
+.audio-status{margin:10px 0 0;padding:0;color:#aeb7a2;font:8px/1.6 var(--mono);letter-spacing:.035em;min-height:13px;overflow-wrap:anywhere}
+#localAudio{display:none}
+@keyframes vinyl-revolution{from{transform:rotate(-12deg)}to{transform:rotate(348deg)}}
+@keyframes record-twinkle{0%,100%{opacity:.4;transform:scale(.9)}50%{opacity:1;transform:scale(1.12)}}
+@keyframes live-pulse{0%,100%{opacity:.75}50%{opacity:1}}
+@media(max-width:760px){
+  .player-banner{grid-template-columns:130px minmax(0,1fr);gap:17px;padding:22px 18px}
+  .player-record-stage{width:126px;height:143px}
+  .record-disc{width:116px;height:116px}
+  .record-label{width:45px;height:45px}
+  .record-label span{font-size:19px}
+  .gramophone-arm{right:0;top:8px;transform:scale(.85) rotate(8deg)}
+  .player-track-info{margin-top:15px}
+  .player-seek-row{margin-top:16px;gap:7px}
+  .player-bottom-row{margin-top:13px}
+  .player-volume{min-width:72px;max-width:95px}
+}
+@media(max-width:480px){
+  .music-player{margin-top:19px}
+  .player-banner{grid-template-columns:82px minmax(0,1fr);gap:12px;padding:17px 13px 15px;min-height:0}
+  .player-record-stage{width:82px;height:109px}
+  .record-disc{width:81px;height:81px;border-width:1px}
+  .record-disc:before{inset:5px}
+  .record-label{width:34px;height:34px;border-width:2px}
+  .record-label span{font-size:15px}
+  .gramophone-arm{right:-1px;top:8px;width:30px;height:48px;border-width:2px;border-radius:0 17px 0 0;transform:scale(.9) rotate(8deg)}
+  .arm-pivot{width:10px;height:10px;right:-5px;top:-5px;border-width:2px}
+  .arm-head{width:9px;height:14px;border-width:1px;bottom:-1px;left:-2px}
+  .record-spark{font-size:10px}
+  .record-spark-one{left:0;top:10px}
+  .record-spark-two{right:0;bottom:3px;font-size:12px}
+  .player-topline{align-items:flex-start;gap:6px}
+  .player-eyebrow{font-size:6px;letter-spacing:.11em;line-height:1.5}
+  .player-live{font-size:6px;gap:4px;letter-spacing:.04em}
+  .player-live i{width:4px;height:4px}
+  .player-track-info{margin-top:12px;gap:5px}
+  .player-track-info h3{font-size:18px;line-height:1.17}
+  .player-track-info p{font-size:9px;line-height:1.45;margin-top:4px}
+  .player-track-index{font-size:6px;padding-top:3px;letter-spacing:.06em}
+  .player-seek-row{grid-template-columns:27px minmax(25px,1fr) 27px;gap:5px;margin-top:13px}
+  .player-seek-row span{font-size:7px}
+  #audioSeek::-webkit-slider-thumb{width:9px;height:9px}
+  .player-bottom-row{margin-top:11px;gap:8px;align-items:center}
+  .player-transport{gap:9px}
+  .player-skip{font-size:14px;padding:4px}
+  .player-play{width:32px;height:32px;font-size:11px}
+  .player-volume{min-width:52px;max-width:67px;gap:5px}
+  .player-volume button{width:18px;font-size:14px}
+  .audio-status{font-size:7px;margin-top:9px;line-height:1.5}
+}
+@media(prefers-reduced-motion:reduce){
+  .music-player.is-playing .record-disc,.music-player.is-playing .record-spark-one,.music-player.is-playing .record-spark-two,.music-player.is-playing .player-live i{animation:none}
+}
